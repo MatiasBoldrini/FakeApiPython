@@ -1,44 +1,56 @@
-from ...main import router, app
+from main import router, app
 from pydantic import BaseModel
-from ..entities import BaseTable
-from ..services import BaseServiceImpl
-from ..controllers import BaseController
-class BaseControllerImplement(BaseController):
-    def __init__(self, urlPrefix: str="/fakestoreapi.com") -> None:
-        self.service = BaseServiceImpl()
-        app.include_router(router, prefix=urlPrefix)
+from main.services import BaseServiceImpl, ProductServiceImpl
+from main.controllers import BaseController
+import json
 
-    @router.get("/")
-    def getAll(self):
+service = ProductServiceImpl()
+class RatingModel(BaseModel):
+    rate: int
+    count: int
+
+class ProductModel(BaseModel):
+    title: str
+    price: int
+    description: str
+    category: str
+    image: str
+    rating: RatingModel
+
+class BaseControllerImplement(BaseController):
+
+    @router.get("")
+    def getAll():
         try:
-            return self.service.findAll()
+            return json.dumps([object.to_dict() for object in service.findAll()])
         except Exception as e:
-            return {"error" : "Error. Por favor intente mas tarde."}
+            return {"error" : "Error. Por favor intente mas tarde."+ str(e.args)}
     
     @router.get("/{id}")
-    def getOne(self, id: int):
+    def getOne(id: int):
         try:
-            return self.service.findById(id)
+            return service.findById(id)
         except Exception as e:
             return {"error" : "Error. Por favor intente mas tarde."}
         
-    @router.post("/", response_model=BaseTable)
-    def post(self, base: BaseModel):
+    @router.post("")
+    def post(data: ProductModel):
         try:
-            return self.service.save(base)
+            return json.dumps(service.save(data))
         except Exception as e:
+            print(e.args)
             return {"error" : "Error. Por favor intente mas tarde."}
 
-    @router.put("/{id}", response_model=BaseTable)
-    def put(self, base: BaseModel, id: int):
+    @router.put("/{id}", response_model=BaseModel)
+    def put(base: BaseModel, id: int):
         try:
-            return self.service.update(base, id)
+            return service.update(base, id)
         except Exception as e:
             return {"error" : "Error. Por favor intente mas tarde."}
 
     @router.delete("/{id}")
-    def delete(self, id: int):
+    def delete(id: int):
         try:
-            return self.service.delete(id)
+            return service.delete(id)
         except Exception as e:
             return {"error" : "Error. Por favor intente mas tarde."}
